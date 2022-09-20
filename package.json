@@ -1,15 +1,16 @@
 {
   "name": "panopto-api",
-  "author": "giammirove"
-  ,
+  "author": "giammirove",
   "dependencies": {
     "m3u8-to-mp4": "^1.0.0",
-    "node-fetch": "^3.2.4"
+    "node-fetch": "^3.2.4",
+    "promptly": "^3.2.0"
   },
   "scripts": {
     "ins": "npm i; sudo npm i -g ."
   },
   "bin": {
     "panopto-downloader": "./index.js"
-  }
+  },
+  "type": "module"
 }

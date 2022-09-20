@@ -1,29 +1,33 @@
-function readInput(txt) {
-    printQuestion(txt);
-    return new Promise((resolve, reject) => {
-        process.stdin.on('data', data => {
-            resolve(data.toString().replace(/\n/gm, ""));
-        });
-    })
+import promptly from "promptly"
+
+export async function readInput(txt) {
+  return await promptly.prompt(`[?] ${txt}`);
+}
+export async function readPassword(txt) {
+  return await promptly.password(`[?] ${txt}`);
 }
 
-function sanitizeName(n) {
-    return n.replace(/ /gm, "_").replace(/"/gm, '\"').replace(/'/gm, "_").replace(/,/gm, "_").replace(/:/gm, "_");
+export function sanitizeName(n) {
+  return n.replace(/ /gm, "_").replace(/"/gm, '\"').replace(/'/gm, "_").replace(/,/gm, "_").replace(/:/gm, "_");
 }
 
-function printInfo(text) {
-    console.log(`[-] ${text}`)
+export function printInfo(text) {
+  console.log(`[-] ${text}`)
 }
 
-function printError(text) {
-    console.log(`[x] ${text}`)
+export function printError(text) {
+  console.log(`[x] ${text}`)
 }
 
-function printQuestion(text) {
-    console.log(`[?] ${text}`)
+export function printQuestion(text) {
+  console.log(`[?] ${text}`)
 }
 
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-module.exports = {
-    sanitizeName, readInput, printInfo, printError, printQuestion
-}
+const __filename = fileURLToPath(import.meta.url);
+
+const __dirname = path.dirname(__filename);
+
+export function getDirname() { return __dirname }
