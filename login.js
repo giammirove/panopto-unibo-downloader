@@ -1,9 +1,14 @@
-import fetch from "node-fetch";
-import fs from "fs"
-import { printInfo, printError, readInput, readPassword, getDirname } from "./utils.js";
+import fetch from 'node-fetch'
+import fs from 'fs'
+import { printInfo, printWarn, printError, readInput, readPasswd } from "./utils.js";
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
 
 const LOGIN = "https://virtuale.unibo.it/login/index.php"
-let COOKIE_FILE = getDirname() + '/cookie.json'
+let COOKIE_FILE = __dirname + '/cookie.json'
 
 
 
@@ -35,10 +40,11 @@ async function getCookieFromFile() {
   try {
     if (fs.existsSync(COOKIE_FILE)) {
       let json = JSON.parse(fs.readFileSync(COOKIE_FILE));
-      return json.cookie;
-    } else {
-      throw "Cookie non trovati!";
+      if (json.cookie) {
+        return json.cookie;
+      }
     }
+    throw "Cookie non trovati!";
   } catch (e) {
     throw e;
   }
@@ -52,10 +58,13 @@ async function setCookieToFile(cookie) {
     throw e;
   }
 }
+export async function clearCookie() {
+  await setCookieToFile('')
+}
 
 export async function login(user, pass) {
   try {
-    return await getCookieFromFile();
+    printWarn("Recupero i cookie!");
   } catch (e) {
     printError("Cookie non trovati o invalidi!");
   }
@@ -63,10 +72,10 @@ export async function login(user, pass) {
     printInfo("Login");
     if (!user || !pass) {
       user = await readInput("Inserisci il tuo username : ");
-      pass = await readPassword("Inserisci la tua password : ");
+      pass = await readPasswd("Inserisci la tua password : ");
     }
 
-    cookie = "";
+    let cookie = "";
     let res = await fetch(LOGIN, {
       "redirect": "manual"
     });
@@ -218,11 +227,11 @@ export async function login(user, pass) {
       "redirect": "manual"
     });
 
-    SESSION_COOKIE = res.headers.get("set-cookie").replace(/,/gm, ";") + ";";
+    let session_cookie = res.headers.get("set-cookie").replace(/,/gm, ";") + ";";
 
     printInfo("Login completato!");
-    setCookieToFile(SESSION_COOKIE);
-    return SESSION_COOKIE;
+    setCookieToFile(session_cookie);
+    return session_cookie;
   } catch (e) {
     printError(e);
   }

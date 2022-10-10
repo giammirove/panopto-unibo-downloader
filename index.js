@@ -1,26 +1,29 @@
 #!/usr/bin/env node
 
-import fetch from "node-fetch";
-import fs from "fs"
-import m3u8ToMp4Converter from "m3u8-to-mp4";
-var converter = new m3u8ToMp4Converter();
+import fetch from 'node-fetch';
+import fs from 'fs';
+import { convertM3u8ToMp4 } from './my_m3u8.js'
 
-import { login } from "./login.js"
-import { printInfo, readInput, getDirname } from "./utils.js";
+import { login, clearCookie } from "./login.js";
+import { printInfo, printWarn, printError, sanitizeName, readInput } from "./utils.js";
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const PANOPTO_LOGIN = "https://unibo.cloud.panopto.eu/Panopto/Pages/Auth/Login.aspx?instance=Virtuale&AllowBounce=true&ReturnUrl="
 const DELIVERY_INFO = "https://unibo.cloud.panopto.eu/Panopto/Pages/Viewer/DeliveryInfo.aspx"
 
-const DIR = getDirname() + "/video"
+const DIR = __dirname + "/video"
 
 async function getAuth() {
   try {
+    let cookie = await login();
     let res = await fetch(PANOPTO_LOGIN, {
       "redirect": "manual"
     });
     let sso_location = res.headers.get("location");
 
-    let cookie = await login();
 
     res = await fetch(sso_location, {
       "headers": {
@@ -74,6 +77,7 @@ async function getStream(link) {
     let cookie = await getAuth();
     let id = getIdFromLink(link);
 
+    printWarn("Cerco lo stream!");
     let res = await fetch(DELIVERY_INFO, {
       "headers": {
         "accept": "application/json, text/javascript, */*; q=0.01",
@@ -92,30 +96,31 @@ async function getStream(link) {
     })
     let json = await res.json();
     let stream = json.Delivery.Streams[0].StreamUrl;
+    printInfo("Stream trovato, inizio a scaricare ... attendere !");
     return stream;
   } catch (e) {
-    throw e;
+    clearCookie();
+    printError("Sessione cookie probabilmente scaduta ... riprova!")
+    return await getStream(link);
   }
 }
 
 async function menu() {
   try {
     let url = await readInput("Che video vuoi scaricare (url) ? ");
-    let name = await readInput("Con che nome vuoi salvarlo ?");
+    let name = await readInput("Con che nome vuoi salvarlo ? ");
 
     let stream = await getStream(url);
-    printInfo("Stream trovato, inizio a scaricare");
     if (!fs.existsSync(DIR)) {
       fs.mkdirSync(DIR);
     }
-    await converter
-      .setInputFile(stream)
-      .setOutputFile(`${DIR}/${name}.mp4`)
-      .start();
+    let outPath = `${DIR}/${name}.mp4`;
+    await convertM3u8ToMp4(stream, outPath);
 
-    printInfo(`Download completato di '${name}'`);
+    printInfo(`Download completato in '${outPath}'`);
   } catch (e) {
-    await menu();
+    console.log(e);
+    printError("Qualcosa e' andato storto ... riprovare!");
   }
 }
 

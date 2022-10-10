@@ -1,33 +1,51 @@
-import promptly from "promptly"
+import readline from "readline";
 
-export async function readInput(txt) {
-  return await promptly.prompt(`[?] ${txt}`);
+export function readInput(txt, pwd) {
+  return new Promise((resolve, reject) => {
+    var rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    if (pwd) rl.stdoutMuted = true;
+
+    rl.question(`[?] ${txt}`, function(input) {
+      rl.close();
+      resolve(input);
+    });
+
+    rl._writeToOutput = function _writeToOutput(stringToWrite) {
+      if (rl.stdoutMuted) rl.output.write("*");
+      else rl.output.write(stringToWrite);
+    };
+  });
 }
-export async function readPassword(txt) {
-  return await promptly.password(`[?] ${txt}`);
+
+export function readPasswd(txt) {
+  return readInput(txt, true);
 }
 
 export function sanitizeName(n) {
-  return n.replace(/ /gm, "_").replace(/"/gm, '\"').replace(/'/gm, "_").replace(/,/gm, "_").replace(/:/gm, "_");
+  return n
+    .replace(/ /gm, "_")
+    .replace(/"/gm, '"')
+    .replace(/'/gm, "_")
+    .replace(/,/gm, "_")
+    .replace(/:/gm, "_");
 }
 
 export function printInfo(text) {
-  console.log(`[-] ${text}`)
+  console.log(`[-] ${text}`);
+}
+
+export function printWarn(text) {
+  console.log(`[!] ${text}`);
 }
 
 export function printError(text) {
-  console.log(`[x] ${text}`)
+  console.log(`[x] ${text}`);
 }
 
 export function printQuestion(text) {
-  console.log(`[?] ${text}`)
+  console.log(`[?] ${text}`);
 }
-
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-
-const __dirname = path.dirname(__filename);
-
-export function getDirname() { return __dirname }
